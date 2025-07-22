@@ -1,0 +1,89 @@
+---
+- name: Install Docker on Rocky Linux
+  hosts: all
+  become: true
+
+
+  tasks:
+
+    - name: Installazione pacchetti necessari
+      dnf:
+        name:
+          - yum-utils
+          - device-mapper-persistent-data
+          - lvm2
+        state: present
+
+    - name: Aggiunta della repository di Docker
+      get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+
+    - name: Installazione dei packages di Docker 
+      dnf:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+
+    - name: Inizializzazione e abilitazione di Docker
+      systemd:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Aggiunta dell'utente vagrant al gruppo docker
+      user:
+        name: vagrant
+        groups: docker
+        append: yes
+
+    - name: Installazione immagine Jenkins
+      command: docker pull jenkins/jenkins:lts
+
+    - name: controllo installazione pip
+      package:
+        name: python3-pip
+        state: present
+
+    - name: controllo installazione del modulo 'requests'
+      pip:
+        name: requests
+        executable: pip3 
+
+    - name: creazione di una rete Docker con IP statico 
+      community.docker.docker_network:
+        name: jenkins-net
+        driver: bridge
+        ipam_config:
+          - subnet: 172.18.0.0/16
+            gateway: 172.18.0.1
+
+
+    - name: Running del container dell'immagine jenkins con ip statico 
+      command: >
+        docker run -d
+        --name jenkins-master
+        --network jenkins-net
+        --ip 172.18.0.10
+        -p 8081:8081
+        -p 50000:50000
+        -v jenkins_home:/var/jenkins_home
+        jenkins/jenkins:lts
+            
+    - name: Installazione immagine Jenkins agent 
+      command: docker pull jenkins/inbound-agent
+
+    - name: Inizializzazione container agent
+      command: > 
+        docker run -d 
+        --name jenkins-agent1 
+        --network jenkins-net 
+        -e JENKINS_URL=http://172.18.0.11:8082
+        -e JENKINS_AGENT_NAME=agent1 
+        -e JENKINS_SECRET=jenkins_agent_container 
+        jenkins/inbound-agent
+
+#Fine step 1
+
