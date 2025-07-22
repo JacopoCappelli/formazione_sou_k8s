@@ -61,29 +61,39 @@
             gateway: 172.18.0.1
 
 
-    - name: Running del container dell'immagine jenkins con ip statico 
-      command: >
-        docker run -d
-        --name jenkins-master
-        --network jenkins-net
-        --ip 172.18.0.10
-        -p 8081:8081
-        -p 50000:50000
-        -v jenkins_home:/var/jenkins_home
-        jenkins/jenkins:lts
-            
-    - name: Installazione immagine Jenkins agent 
-      command: docker pull jenkins/inbound-agent
+    - name: Avvio container Jenkins master con IP statico
+      community.docker.docker_container:
+        name: jenkins-master
+        image: jenkins/jenkins:lts
+        state: started
+        restart_policy: unless-stopped
+        published_ports:
+          - "8080:8080"
+          - "50000:50000"
+        volumes:
+          - jenkins_home:/var/jenkins_home
+        networks:
+          - name: jenkins-net
+            ipv4_address: 172.18.0.10
+        detach: true
 
-    - name: Inizializzazione container agent
-      command: > 
-        docker run -d 
-        --name jenkins-agent1 
-        --network jenkins-net 
-        -e JENKINS_URL=http://172.18.0.11:8082
-        -e JENKINS_AGENT_NAME=agent1 
-        -e JENKINS_SECRET=jenkins_agent_container 
-        jenkins/inbound-agent
+    - name: Scarica immagine jenkins/inbound-agent
+      community.docker.docker_image:
+        name: jenkins/inbound-agent
+        source: pull
 
+    - name: Avvio container Jenkins agent
+      community.docker.docker_container:
+        name: jenkins-agent1
+        image: jenkins/inbound-agent
+        state: started
+        restart_policy: unless-stopped
+        env:
+          JENKINS_URL: http://172.18.0.11:8080
+          JENKINS_AGENT_NAME: agent1
+          JENKINS_SECRET: jenkins_agent_container
+        networks:
+          - name: jenkins-net
+        detach: true
 #Fine step 1
 
