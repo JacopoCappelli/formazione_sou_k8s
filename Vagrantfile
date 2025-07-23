@@ -6,7 +6,7 @@ Vagrant.configure("2") do |config|
 
     rocky.vm.provider "virtualbox" do |v|
       v.gui = false
-      v.name = "rocky-vm"
+      v.name = "rocky-vm" 
       v.memory = "5024"
     end
 

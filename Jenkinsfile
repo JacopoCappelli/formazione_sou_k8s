@@ -1,14 +1,50 @@
 pipeline {
     agent any
+
+    environment {
+        // Variabili utili
+        IMAGE_NAME = "flask-page"
+    }
+
     stages {
-        stage('Build') {
+        stage('Checkout') {
             steps {
-                sh 'docker build -t flask-page:latest .'
+                checkout scm
             }
         }
-        stage('Push') {
+
+        stage('Determine Docker Tag') {
             steps {
-                sh 'docker push accountaziendale/flask-page:latest'
+                script {
+                    def gitTag = sh(
+                        script: "git describe --exact-match --tags \$(git rev-parse HEAD) || echo ''",
+                        returnStdout: true
+                    ).trim()
+
+                    def branchName = env.GIT_BRANCH ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+
+                    if (gitTag) {
+                        env.DOCKER_TAG = gitTag
+                        echo "Building from Git Tag: ${gitTag}"
+                    } else if (branchName == "master") {
+                        env.DOCKER_TAG = "latest"
+                        echo "Building from master branch: tagging as latest"
+                    } else if (branchName == "develop") {
+                        def commitSHA = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                        env.DOCKER_TAG = "develop-${commitSHA}"
+                        echo "Building from develop branch: tagging as ${env.DOCKER_TAG}"
+                    } else {
+                        error("Unsupported branch/tag for tagging Docker image")
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh "docker build -t ${env.IMAGE_NAME}:${env.DOCKER_TAG} ."
+                }
             }
         }
     }

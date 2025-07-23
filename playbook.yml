@@ -72,10 +72,15 @@
           - "50000:50000"
         volumes:
           - jenkins_home:/var/jenkins_home
+          - /usr/bin/docker:/usr/bin/docker
+          - /var/run/docker.sock:/var/run/docker.sock 
+
         networks:
           - name: jenkins-net
             ipv4_address: 172.18.0.10
         detach: true
+ 
+
 
     - name: Scarica immagine jenkins/inbound-agent
       community.docker.docker_image:
@@ -89,9 +94,12 @@
         state: started
         restart_policy: unless-stopped
         env:
-          JENKINS_URL: http://172.18.0.11:8080
+          JENKINS_URL: http://172.18.0.10:8080
           JENKINS_AGENT_NAME: agent1
-          JENKINS_SECRET: jenkins_agent_container
+          JENKINS_AGENT_WORKDIR: /home/jenkins/agent
+          JENKINS_SECRET: fb580259a7f0476443bcffe6613b1359daf3e81a2e793a67c79b28db30f37040 
+
+
         networks:
           - name: jenkins-net
         detach: true
