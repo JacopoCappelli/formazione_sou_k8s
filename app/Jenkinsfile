@@ -1,50 +1,62 @@
 pipeline {
-    agent {label 'jenkins-master'}
+    agent { label 'master' }
 
     environment {
-        // Variabili utili
-        IMAGE_NAME = "flask-page"
+        IMAGE_NAME = 'flask-page'
     }
 
     stages {
-        stage('Checkout') {
+        stage('Check Branch') {
             steps {
-                checkout scm
+                script {
+                    def branch = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+
+                    if (branch == "main") {
+                        env.IMAGE_TAG = "latest"
+                    } else if (branch == "develop") {
+                        def sha = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                        env.IMAGE_TAG = "develop-${sha}"
+                    } else {
+                        env.IMAGE_TAG = branch
+                    }
+
+                    echo "Branch: ${branch}"
+                    echo "Docker Tag: ${env.IMAGE_TAG}"
+                }
             }
         }
 
-        stage('Determine Docker Tag') {
+        stage('check git tag'){
+
             steps {
                 script {
-                    def gitTag = sh(
-                        script: "git describe --exact-match --tags \$(git rev-parse HEAD) || echo ''",
-                        returnStdout: true
-                    ).trim()
-
-                    def branchName = env.GIT_BRANCH ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
-
-                    if (gitTag) {
-                        env.DOCKER_TAG = gitTag
-                        echo "Building from Git Tag: ${gitTag}"
-                    } else if (branchName == "master") {
-                        env.DOCKER_TAG = "latest"
-                        echo "Building from master branch: tagging as latest"
-                    } else if (branchName == "develop") {
-                        def commitSHA = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                        env.DOCKER_TAG = "develop-${commitSHA}"
-                        echo "Building from develop branch: tagging as ${env.DOCKER_TAG}"
-                    } else {
-                        error("Unsupported branch/tag for tagging Docker image")
+                    try {
+                        def gitTag = sh(script: "git describe --contains --tags \$(git rev-parse HEAD)", returnStdout: true).trim()
+                        if (gitTag) {
+                            env.IMAGE_TAG = gitTag
+                            echo "Found Git tag: ${gitTag}"
+                        } else {
+                            echo "No tag found on this commit."
+                        }
+                    } catch (err) {
+                        echo "Error running git describe: ${err}"
+                        // fallback o azione alternativa, ad esempio lasciare IMAGE_TAG vuota o impostare un valore default
+                        env.IMAGE_TAG = ''
                     }
                 }
             }
+
         }
 
-        stage('Build Docker Image') {
+        stage('Build') {
             steps {
-                script {
-                    sh "docker build -t ${env.IMAGE_NAME}:${env.DOCKER_TAG} ."
-                }
+                sh "docker build -t ${env.IMAGE_NAME}:${env.IMAGE_TAG} ."
+            }
+        }
+
+        stage('Push') {
+            steps {
+                sh "docker push accountaziendale/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
             }
         }
     }
