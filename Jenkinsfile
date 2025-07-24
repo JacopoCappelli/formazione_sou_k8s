@@ -1,33 +1,24 @@
 def IMAGE_NAME = 'flask-page'
-def IMAGE_TAG = ''
+def IMAGE_TAG = 'latest' // Set a default
 
 pipeline {
     agent { label 'agent1' }
-
-    environment {
-        IMAGE_NAME = "${IMAGE_NAME}"
-    }
 
     stages {
         stage('Check Branch') {
             steps {
                 script {
-                    def branch = sh(script: "git rev-parse --abbrev-ref HEAD || git rev-parse --abbrev-ref origin/HEAD | sed 's|origin/||'", returnStdout: true).trim()
+                    // Try to get branch from Jenkins env or fallback to git
+                    def branch = env.BRANCH_NAME ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
                     echo "Branch: '${branch}'"
                     if (branch == "main") {
-                      //  sh "git checkout main"
-                        echo "main"
+                        IMAGE_TAG = "latest"
                     } else if (branch == "develop") {
-                       // sh "git checkout develop"
-                         echo "develop"
-                        
-                      //  def shortCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true)
-                       // IMAGE_TAG = "develop-${shortCommit}"
+                        def shortCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                        IMAGE_TAG = "develop-${shortCommit}"
                     } else {
-                        echo "${branch}"
+                        IMAGE_TAG = branch
                     }
-
-         
                 }
             }
         }
@@ -38,6 +29,7 @@ pipeline {
                 sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
+
 
         stage('Push Docker Image') {
             steps {
