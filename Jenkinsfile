@@ -25,7 +25,7 @@ pipeline {
                       //  def shortCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true)
                        // IMAGE_TAG = "develop-${shortCommit}"
                     } else {
-                        ehco "$branch"
+                        echo "${branch}"
                     }
 
          
