@@ -12,13 +12,11 @@ pipeline {
         stage('Check Branch') {
             steps {
                 script {
-                    def branch = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true)
-                    echo "Branch: ${branch}"
-
-                    if (branch == "main") {
+                    def branch = sh "git branch"
+                    if (branch == "* main") {
                       //  sh "git checkout main"
                         echo "main"
-                    }else if (branch == "develop") {
+                    }else if (branch == "* develop") {
                        // sh "git checkout develop"
                          echo "develop"
                         
