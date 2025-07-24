@@ -12,17 +12,16 @@ pipeline {
         stage('Check Branch') {
             steps {
                 script {
-                    def branch = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                    def branch = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true)
                     echo "Branch: ${branch}"
 
                     if (branch == "main") {
                         IMAGE_TAG = "latest"
-                    } else if (branch == "develop") {
-                        def shortCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    }  
+                    if (branch == "develop") {
+                        def shortCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true)
                         IMAGE_TAG = "develop-${shortCommit}"
-                    } else {
-                        IMAGE_TAG = "test"
-                    }
+                    } 
 
                     env.IMAGE_TAG = IMAGE_TAG
                     echo "Docker tag set to: ${IMAGE_TAG}"
