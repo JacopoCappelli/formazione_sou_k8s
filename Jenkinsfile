@@ -16,7 +16,7 @@ pipeline {
                     if (branch == "main") {
                       //  sh "git checkout main"
                         echo "main"
-                    }else if (branch == "develop") {
+                    } else if (branch == "develop") {
                        // sh "git checkout develop"
                          echo "develop"
                         
