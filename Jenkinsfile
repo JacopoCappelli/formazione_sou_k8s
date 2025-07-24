@@ -1,13 +1,14 @@
+def IMAGE_NAME = 'flask-page'
+def IMAGE_TAG = ''
+
 pipeline {
     agent { label 'agent1' }
 
     environment {
-        IMAGE_NAME = 'flask-page'
-        IMAGE_TAG = ''
+        IMAGE_NAME = "${IMAGE_NAME}"
     }
 
     stages {
-
         stage('Check Branch') {
             steps {
                 script {
@@ -15,46 +16,34 @@ pipeline {
                     echo "Branch: ${branch}"
 
                     if (branch == "main") {
-                        env.IMAGE_TAG = "latest"
+                        IMAGE_TAG = "latest"
                     } else if (branch == "develop") {
-                        def sha = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                        env.IMAGE_TAG = "develop-${sha}"
+                        def shortCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                        IMAGE_TAG = "develop-${shortCommit}"
                     } else {
-                        def sha = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                        env.IMAGE_TAG = "${branch}-${sha}"
+                        IMAGE_TAG = "test"
                     }
 
-                    echo "Docker Tag from branch: ${env.IMAGE_TAG}"
-                }
-            }
-        }
-
-        stage('Check Git Tag') {
-            steps {
-                script {
-                    def tag = sh(script: "git tag --points-at HEAD", returnStdout: true).trim()
-                    if (tag) {
-                        env.IMAGE_TAG = tag
-                        echo "Found Git tag: ${tag}"
-                    } else {
-                        echo "No Git tag found on this commit."
-                    }
+                    env.IMAGE_TAG = IMAGE_TAG
+                    echo "Docker tag set to: ${IMAGE_TAG}"
                 }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo "Building image: ${env.IMAGE_NAME}:${env.IMAGE_TAG}"
-                sh "docker build -t ${env.IMAGE_NAME}:${env.IMAGE_TAG} ."
+                echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                echo "Pushing image: accountaziendale/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
-                sh "docker tag ${env.IMAGE_NAME}:${env.IMAGE_TAG} accountaziendale/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
-                sh "docker push accountaziendale/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
+                    sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} accountaziendale/${IMAGE_NAME}:${IMAGE_TAG}"
+                    sh "docker push accountaziendale/${IMAGE_NAME}:${IMAGE_TAG}"
+                }
             }
         }
     }
