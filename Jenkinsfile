@@ -1,24 +1,28 @@
-pipeline {
-    agent { label 'master' }
+def IMAGE_NAME = 'flask-page'
+def IMAGE_TAG = ' '
 
-    environment {
-        IMAGE_NAME = 'flask-page'
-    }
+
+pipeline {
+
+    agent { label 'agent1' }
+
+   
+    
 
     stages {
         stage('Check Branch') {
             steps {
                 script {
-                    def branch = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                    def branch = sh(script: "git rev-parse --abbrev-ref HEAD")
+                    echo "Branch: ${branch}"
 
                     if (branch == "main") {
                         env.IMAGE_TAG = "latest"
-                    } else if (branch == "develop") {
-                        def sha = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    }  
+                    if (branch == "develop") {
+                        def sha = sh(script: "12")
                         env.IMAGE_TAG = "develop-${sha}"
-                    } else {
-                        env.IMAGE_TAG = branch
-                    }
+                    } 
 
                     echo "Branch: ${branch}"
                     echo "Docker Tag: ${env.IMAGE_TAG}"
@@ -31,7 +35,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        def gitTag = sh(script: "git describe --contains --tags \$(git rev-parse HEAD)", returnStdout: true).trim()
+                        def gitTag = sh(script: "git tag")
                         if (gitTag) {
                             env.IMAGE_TAG = gitTag
                             echo "Found Git tag: ${gitTag}"
@@ -40,7 +44,6 @@ pipeline {
                         }
                     } catch (err) {
                         echo "Error running git describe: ${err}"
-                        // fallback o azione alternativa, ad esempio lasciare IMAGE_TAG vuota o impostare un valore default
                         env.IMAGE_TAG = ''
                     }
                 }

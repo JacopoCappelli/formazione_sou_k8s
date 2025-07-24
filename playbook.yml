@@ -39,8 +39,16 @@
         groups: docker
         append: yes
 
-    - name: Installazione immagine Jenkins
-      command: docker pull jenkins/jenkins:lts
+    - name: installazione immagine di docker dentro il container 
+      community.docker.docker_image:
+       name:  jpetazzo/dind
+       source: pull 
+
+    - name: Scarica immagine Jenkins
+      community.docker.docker_image:
+        name: jenkins/jenkins
+        source: pull
+
 
     - name: controllo installazione pip
       package:
@@ -64,16 +72,18 @@
     - name: Avvio container Jenkins master con IP statico
       community.docker.docker_container:
         name: jenkins-master
-        image: jenkins/jenkins:lts
+        image: jenkins/jenkins
         state: started
         restart_policy: unless-stopped
         published_ports:
           - "8080:8080"
           - "50000:50000"
+        
         volumes:
           - jenkins_home:/var/jenkins_home
           - /usr/bin/docker:/usr/bin/docker
           - /var/run/docker.sock:/var/run/docker.sock 
+
 
         networks:
           - name: jenkins-net
@@ -91,17 +101,31 @@
       community.docker.docker_container:
         name: jenkins-agent1
         image: jenkins/inbound-agent
+        volumes:
+         - /usr/bin/docker:/usr/bin/docker
+
         state: started
         restart_policy: unless-stopped
         env:
           JENKINS_URL: http://172.18.0.10:8080
           JENKINS_AGENT_NAME: agent1
-          JENKINS_AGENT_WORKDIR: /home/jenkins/agent
-          JENKINS_SECRET: fb580259a7f0476443bcffe6613b1359daf3e81a2e793a67c79b28db30f37040 
+          JENKINS_AGENT_WORKDIR: /home/jenkins/agent 
+          JENKINS_SECRET: eef2f974e921fe02619827c905f3c088e58751e46c57e3e94add1329073ac81a
 
 
         networks:
           - name: jenkins-net
         detach: true
-#Fine step 1
+
+    - name: Avvia container Docker-in-Docker
+      community.docker.docker_container:
+          name: docker-dind
+          image:  jpetazzo/dind
+
+          privileged: true
+          state: started
+          restart_policy: unless-stopped
+          ports:
+            - "2375:2375"  # opzio
+      #Fine step 1
 
