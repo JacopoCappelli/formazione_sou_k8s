@@ -12,7 +12,8 @@ pipeline {
         stage('Check Branch') {
             steps {
                 script {
-                  def branch = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true)
+                    def branch = sh(script: "git rev-parse --abbrev-ref HEAD || git rev-parse --abbrev-ref origin/HEAD | sed 's|origin/||'", returnStdout: true).trim()
+                    echo "Branch: '${branch}'"
                     if (branch == "main") {
                       //  sh "git checkout main"
                         echo "main"
