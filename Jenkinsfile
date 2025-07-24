@@ -16,19 +16,19 @@ pipeline {
                     echo "Branch: ${branch}"
 
                     if (branch == "main") {
-                        sh "git checkout main"
+                      //  sh "git checkout main"
+                        echo "main"
+                    }else if (branch == "develop") {
+                       // sh "git checkout develop"
+                         echo "develop"
+                        
+                      //  def shortCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true)
+                       // IMAGE_TAG = "develop-${shortCommit}"
+                    } else {
+                        ehco "$branch"
+                    }
 
-                        IMAGE_TAG = "latest"
-                    }  
-                    if (branch == "develop") {
-                        sh "git checkout develop"
-
-                        def shortCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true)
-                        IMAGE_TAG = "develop-${shortCommit}"
-                    } 
-
-                    env.IMAGE_TAG = IMAGE_TAG
-                    echo "Docker tag set to: ${IMAGE_TAG}"
+         
                 }
             }
         }
