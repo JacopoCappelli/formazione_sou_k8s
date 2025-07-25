@@ -18,7 +18,7 @@ pipeline {
                          env.dockerTag = 'latest'
                     } else if (branch == "develop") {
                         def shortCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                        env.dockerTag = "develop-${shortCommit}"
+                           env.dockerTag = "${branch}-${shortCommit}"
                     } else {
                         echo "non ci sono altre tag disponibili"
                     }
