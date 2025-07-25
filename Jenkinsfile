@@ -13,7 +13,7 @@ pipeline {
                     echo "Branch: '${branch}'"
                     if (branch == "main") {
                         IMAGE_TAG = "latest"
-                        sh 'pwd'
+                        pwd
                     } else if (branch == "develop") {
                         def shortCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                         IMAGE_TAG = "develop-${shortCommit}"
