@@ -101,6 +101,8 @@
       community.docker.docker_container:
         name: jenkins-agent1
         image: jenkins/inbound-agent
+        user: root
+        command: chmod 777
         volumes:
          - /usr/bin/docker:/usr/bin/docker
          - /var/run/docker.sock:/var/run/docker.sock
