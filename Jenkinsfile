@@ -1,27 +1,42 @@
 def IMAGE_NAME = 'flask-page'
-def IMAGE_TAG = 'latest' // Set a default
 
 pipeline {
     agent { label 'agent1' }
 
     stages {
-        stage('Check Branch') {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Tag image') {
             steps {
                 script {
                     sh "git fetch --tags"
-                    // Try to get branch from Jenkins env or fallback to git
-                    def branch = env.BRANCH_NAME ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
-                    env.dockerTag = sh(script: "git describe --exact-match --tags ${branch} || echo ''", returnStdout: true).trim()
 
-                    echo "Branch: '${branch}'"
-                    if (branch == "main") {
-                         env.dockerTag = 'latest'
-                    } else if (branch == "develop") {
-                        def shortCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                           env.dockerTag = "${branch}-${shortCommit}"
+                    // Fallback se GIT_BRANCH non esiste
+                    def branch = env.BRANCH_NAME ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                    env.GIT_BRANCH = "origin/${branch}"
+                    env.GIT_COMMIT = sh(script: "git rev-parse HEAD", returnStdout: true).trim()
+
+                    env.dockerTag = 'idk'  // Default temporaneo
+
+                    echo "GIT_BRANCH: ${env.GIT_BRANCH}"
+                    echo "GIT_COMMIT: ${env.GIT_COMMIT}"
+
+                    if (env.GIT_BRANCH.startsWith('origin/main/tags/')) {
+                        env.dockerTag = env.GIT_BRANCH.replace('origin/main/tags/', '')
+                    } else if (env.GIT_BRANCH == 'origin/main') {
+                        env.dockerTag = 'latest'
+                    } else if (env.GIT_BRANCH == 'origin/develop') {
+                        env.dockerTag = "develop-${env.GIT_COMMIT.substring(0, 7)}"
                     } else {
-                        echo "non ci sono altre tag disponibili"
+                        env.dockerTag = "${branch}-${env.GIT_COMMIT.substring(0, 7)}"
                     }
+
+                    echo "FINAL DOCKER TAG: ${env.dockerTag}"
                 }
             }
         }
@@ -33,14 +48,13 @@ pipeline {
             }
         }
 
-
         stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
                     sh "docker tag ${IMAGE_NAME}:${env.dockerTag} accountaziendale/${IMAGE_NAME}:${env.dockerTag}"
                     sh "docker push accountaziendale/${IMAGE_NAME}:${env.dockerTag}"
-                    echo "hello world"
+                    echo "Docker image pushed successfully!"
                 }
             }
         }
