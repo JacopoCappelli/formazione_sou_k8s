@@ -39,10 +39,7 @@
         groups: docker
         append: yes
 
-    - name: installazione immagine di docker dentro il container 
-      community.docker.docker_image:
-       name:  jpetazzo/dind
-       source: pull 
+
 
     - name: Scarica immagine Jenkins
       community.docker.docker_image:
@@ -121,15 +118,5 @@
           - name: jenkins-net
         detach: true
 
-    - name: Avvia container Docker-in-Docker
-      community.docker.docker_container:
-          name: docker-dind
-          image:  jpetazzo/dind
 
-          privileged: true
-          state: started
-          restart_policy: unless-stopped
-          ports:
-            - "2375:2375"  # opzio
-      #Fine step 1
 
