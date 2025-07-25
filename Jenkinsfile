@@ -16,12 +16,12 @@ pipeline {
                 script {
                     sh "git fetch --tags"
 
-                    // Fallback se GIT_BRANCH non esiste
+                   
                     def branch = env.BRANCH_NAME ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
                     env.GIT_BRANCH = "origin/${branch}"
                     env.GIT_COMMIT = sh(script: "git rev-parse HEAD", returnStdout: true).trim()
 
-                    env.dockerTag = 'idk'  // Default temporaneo
+                    env.dockerTag = 'idk'  
 
                     echo "GIT_BRANCH: ${env.GIT_BRANCH}"
                     echo "GIT_COMMIT: ${env.GIT_COMMIT}"
@@ -54,7 +54,7 @@ pipeline {
                     sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
                     sh "docker tag ${IMAGE_NAME}:${env.dockerTag} accountaziendale/${IMAGE_NAME}:${env.dockerTag}"
                     sh "docker push accountaziendale/${IMAGE_NAME}:${env.dockerTag}"
-                    echo "Docker image pushed successfully!"
+                    
                 }
             }
         }
