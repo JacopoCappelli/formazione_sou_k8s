@@ -8,15 +8,16 @@ pipeline {
         stage('Check Branch') {
             steps {
                 script {
+                    env.dockerTag = 'idk' 
                     // Try to get branch from Jenkins env or fallback to git
                     def branch = env.BRANCH_NAME ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
                     echo "Branch: '${branch}'"
                     if (branch == "main") {
-                        IMAGE_TAG = "latest"
+                        env.dockerTag = "latest"
                         pwd
                     } else if (branch == "develop") {
                         def shortCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                        IMAGE_TAG = "develop-${shortCommit}"
+                        env.dockerTag = "develop-${shortCommit}"
                         sh 'pwd'
                     } else {
                         IMAGE_TAG = branch
@@ -27,8 +28,8 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
-                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                echo "Building image: ${IMAGE_NAME}:${env.dockerTag}"
+                sh "docker build -t ${IMAGE_NAME}:${env.dockerTag} ."
             }
         }
 
