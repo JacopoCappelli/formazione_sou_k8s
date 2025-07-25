@@ -11,6 +11,7 @@ Vagrant.configure("2") do |config|
       v.memory = "5024"
     end
     rocky.vm.provision "shell", inline: "sudo chmod 666 /var/run/docker.sock"
+    end
 
     rocky.vm.provision "ansible" do |ansible|
       ansible.playbook = "playbook.yml"
