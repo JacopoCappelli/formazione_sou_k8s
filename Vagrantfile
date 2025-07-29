@@ -6,13 +6,15 @@ Vagrant.configure("2") do |config|
 
     rocky.vm.provider "virtualbox" do |v|
       v.gui = false
-      v.name = "rocky-vm" 
+      v.name = "rocky-vm"
       v.memory = "5024"
-    end
+    end 
+
+    rocky.vm.provision "shell" , inline: "sudo chmod 776 /var/run/docker.sock"
 
     rocky.vm.provision "ansible" do |ansible|
       ansible.playbook = "playbook.yml"
-    end
-  end
+    end 
+  end 
 
 end

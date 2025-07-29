@@ -58,22 +58,7 @@ pipeline {
                 }
             }
         }
-        stage('Deploy to Kubernetes') {
-            steps {
-                script {
-                    // Assicurati che kubectl e helm siano configurati per puntare al tuo cluster Minikube
-                    // Questo potrebbe essere fatto tramite credenziali Kubernetes nel Jenkinsfile
-                    // o configurando il KUBECONFIG.
-
-                  
-                    sh "helm upgrade --install my-flask-app ./new_chart " +
-                    "--namespace default " + 
-                    "--set image.repository=accountazinedale/flask-page " + 
-                    "--set image.tag=${env.dockerTag} " + 
-                    "--set ingress.enabled=true " + 
-                    "--set ingress.host=flask-app.local " + 
-                    "--atomic --wait" 
-            }
-       }
+        
     }
+    
 }

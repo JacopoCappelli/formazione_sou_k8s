@@ -3,9 +3,7 @@
   hosts: all
   become: true
 
-
   tasks:
-
     - name: Installazione pacchetti necessari
       dnf:
         name:
@@ -39,35 +37,28 @@
         groups: docker
         append: yes
 
-    - name: installazione immagine di docker dentro il container 
-      community.docker.docker_image:
-       name:  jpetazzo/dind
-       source: pull 
+    - name: Assicurati che pip sia installato
+      package:
+        name: python3-pip
+        state: present
+
+    - name: Installa il modulo Python 'requests'
+      pip:
+        name: requests
+        executable: pip3
 
     - name: Scarica immagine Jenkins
       community.docker.docker_image:
         name: jenkins/jenkins
         source: pull
 
-
-    - name: controllo installazione pip
-      package:
-        name: python3-pip
-        state: present
-
-    - name: controllo installazione del modulo 'requests'
-      pip:
-        name: requests
-        executable: pip3 
-
-    - name: creazione di una rete Docker con IP statico 
-      community.docker.docker_network:
+    - name: Creazione di una rete Docker con IP statico 
+      community.docker.docker_network: 
         name: jenkins-net
         driver: bridge
         ipam_config:
           - subnet: 172.18.0.0/16
             gateway: 172.18.0.1
-
 
     - name: Avvio container Jenkins master con IP statico
       community.docker.docker_container:
@@ -78,19 +69,14 @@
         published_ports:
           - "8080:8080"
           - "50000:50000"
-        
         volumes:
           - jenkins_home:/var/jenkins_home
           - /usr/bin/docker:/usr/bin/docker
           - /var/run/docker.sock:/var/run/docker.sock 
-
-
         networks:
           - name: jenkins-net
             ipv4_address: 172.18.0.10
         detach: true
- 
-
 
     - name: Scarica immagine jenkins/inbound-agent
       community.docker.docker_image:
@@ -102,30 +88,15 @@
         name: jenkins-agent1
         image: jenkins/inbound-agent
         volumes:
-         - /usr/bin/docker:/usr/bin/docker
-
-        state: started
-        restart_policy: unless-stopped
+          - jenkins_volume:/var/jenkins_volume
+          - /usr/bin/docker:/usr/bin/docker
+          - /var/run/docker.sock:/var/run/docker.sock 
         env:
           JENKINS_URL: http://172.18.0.10:8080
           JENKINS_AGENT_NAME: agent1
           JENKINS_AGENT_WORKDIR: /home/jenkins/agent 
-          JENKINS_SECRET: eef2f974e921fe02619827c905f3c088e58751e46c57e3e94add1329073ac81a
-
-
+          JENKINS_SECRET: 421d805bb6c3bb19849ae71eee20887e0bf09fde6306d5edf5fa33fa7ae2d4a9
+        state: started
         networks:
           - name: jenkins-net
         detach: true
-
-    - name: Avvia container Docker-in-Docker
-      community.docker.docker_container:
-          name: docker-dind
-          image:  jpetazzo/dind
-
-          privileged: true
-          state: started
-          restart_policy: unless-stopped
-          ports:
-            - "2375:2375"  # opzio
-      #Fine step 1
-

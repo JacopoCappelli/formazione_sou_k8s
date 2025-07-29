@@ -1,0 +1,17 @@
+appName: flaskapp
+
+image:
+  repository: accountaziendale/flask-page
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  type: NodePort
+  port: 8000
+
+resources: {}
+
+autoscaling:
+  enabled: false
