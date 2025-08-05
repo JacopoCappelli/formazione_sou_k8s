@@ -55,10 +55,13 @@
     - name: Creazione di una rete Docker con IP statico 
       community.docker.docker_network: 
         name: jenkins-net
+        scope: local
         driver: bridge
         ipam_config:
           - subnet: 172.18.0.0/16
             gateway: 172.18.0.1
+
+    
 
     - name: Avvio container Jenkins master con IP statico
       community.docker.docker_container:
@@ -69,10 +72,15 @@
         published_ports:
           - "8080:8080"
           - "50000:50000"
+          
         volumes:
           - jenkins_home:/var/jenkins_home
           - /usr/bin/docker:/usr/bin/docker
           - /var/run/docker.sock:/var/run/docker.sock 
+          - /usr/bin/kubectl:/usr/bin/kubectl
+          - /usr/local/bin/helm:/usr/local/bin/helm
+
+
         networks:
           - name: jenkins-net
             ipv4_address: 172.18.0.10
@@ -82,6 +90,9 @@
       community.docker.docker_image:
         name: jenkins/inbound-agent
         source: pull
+    
+   
+ 
 
     - name: Avvio container Jenkins agent
       community.docker.docker_container:
@@ -91,12 +102,16 @@
           - jenkins_volume:/var/jenkins_volume
           - /usr/bin/docker:/usr/bin/docker
           - /var/run/docker.sock:/var/run/docker.sock 
+          - /usr/bin/kubectl:/usr/bin/kubectl
+          - /usr/local/bin/helm:/usr/local/bin/helm
+        
         env:
-          JENKINS_URL: http://172.18.0.10:8080
           JENKINS_AGENT_NAME: agent1
           JENKINS_AGENT_WORKDIR: /home/jenkins/agent 
-          JENKINS_SECRET: 421d805bb6c3bb19849ae71eee20887e0bf09fde6306d5edf5fa33fa7ae2d4a9
-        state: started
+          JENKINS_SECRET: 9b2f364d6eb8eeef9f256e46c63c091c4c3783bffa4cc64fd5de317724933913
+        
+        state: started       
         networks:
           - name: jenkins-net
         detach: true
+
