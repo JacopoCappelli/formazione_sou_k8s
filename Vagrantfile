@@ -49,6 +49,8 @@ EOF
           echo 'export PATH="$PATH:/usr/local/bin"' >> ~/.bashrc
       fi
       source ~/.bashrc
+      sudo dnf update && sudo dnf install jq -y
+      sudo dnf install java -y
  
     SHELL
 

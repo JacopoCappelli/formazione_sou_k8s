@@ -115,3 +115,7 @@
           - name: jenkins-net
         detach: true
 
+    - name: Avvio script per la creazione di un nodo agent tramite token crumb 
+      ansible.builtin.shell: agent-creator.sh
+        
+
